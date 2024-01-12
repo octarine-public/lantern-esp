@@ -2,6 +2,7 @@ import {
 	Color,
 	GUIInfo,
 	ImageData,
+	MathSDK,
 	Rectangle,
 	RendererSDK,
 	Vector2,
@@ -12,16 +13,19 @@ export class LanternGUI {
 	private readonly texSize = 14
 	private readonly texRecPos = new Rectangle()
 	private readonly texVecSize = new Vector2()
-
 	private readonly iconSize = this.texSize * 1.4
 	private readonly iconRecPos = new Rectangle()
 	private readonly iconVecSize = new Vector2()
+
+	private readonly iconLock =
+		"github.com/octarine-public/lantern-esp/scripts_files/icons/lock.svg"
 
 	public Draw(
 		position: Vector3,
 		remainingTime: number,
 		unitName: string,
-		additionalSize: number
+		additionalSize: number,
+		formatTime = false
 	) {
 		const w2s = RendererSDK.WorldToScreen(position)
 		if (w2s === undefined || GUIInfo.Contains(w2s)) {
@@ -37,17 +41,18 @@ export class LanternGUI {
 			return
 		}
 
-		const text =
-			remainingTime < 2
-				? remainingTime.toFixed(1)
+		this.drawIcon(unitName)
+
+		let text = ""
+		if (remainingTime > 60) {
+			text = formatTime
+				? MathSDK.FormatTime(remainingTime)
 				: Math.ceil(remainingTime).toFixed()
+		} else {
+			text = remainingTime.toFixed(remainingTime < 2 ? 1 : 0)
+		}
 
 		RendererSDK.TextByFlags(text, this.texRecPos, Color.White)
-
-		const texture = ImageData.GetUnitTexture(unitName, true)
-		if (texture !== undefined) {
-			RendererSDK.Image(texture, this.iconRecPos.pos1, -1, this.iconRecPos.Size)
-		}
 	}
 
 	private update(w2s: Vector2, additionalSize: number) {
@@ -70,5 +75,19 @@ export class LanternGUI {
 		this.iconRecPos.pos1.CopyFrom(w2sPos2)
 		this.iconRecPos.pos2.CopyFrom(w2sPos2.Add(this.iconVecSize))
 		this.iconRecPos.AddY(this.texRecPos.Height / 2 + this.iconRecPos.Height / 2)
+	}
+
+	private drawIcon(unitName: string) {
+		const islantern = unitName.includes("lantern")
+		const Image = islantern
+			? this.iconLock
+			: ImageData.GetUnitTexture(unitName, true) ?? ""
+		RendererSDK.Image(
+			Image,
+			this.iconRecPos.pos1,
+			-1,
+			this.iconRecPos.Size,
+			islantern ? Color.Red : Color.White
+		)
 	}
 }

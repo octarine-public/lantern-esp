@@ -46,7 +46,8 @@ const bootstrap = new (class CLanternESP {
 				owner.Position,
 				remainingTime,
 				caster.Name,
-				this.menu.Size.value
+				this.menu.Size.value,
+				this.menu.FormatTime.value
 			)
 		}
 	}
@@ -62,9 +63,17 @@ const bootstrap = new (class CLanternESP {
 			this.modifiers.remove(modifier)
 		}
 	}
+
+	public GameChanged() {
+		this.menu.GameChanged()
+	}
 })()
 
 EventsSDK.on("Draw", () => bootstrap.Draw())
+
+EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
+
+EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
 
 EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
 
