@@ -12,6 +12,7 @@ export class MenuManager {
 	public readonly State: Menu.Toggle
 	public readonly FormatTime: Menu.Toggle
 
+	private readonly reset: Menu.Button
 	private readonly sleeper = new Sleeper()
 	private readonly visual = Menu.AddEntry("Visual")
 
@@ -40,7 +41,8 @@ export class MenuManager {
 			"Additional timer size and hero image"
 		)
 
-		this.Tree.AddButton("Reset settings").OnValue(() => this.ResetSettings())
+		this.reset = this.Tree.AddButton("Reset settings")
+		this.reset.OnValue(() => this.ResetSettings())
 	}
 
 	public ResetSettings() {
@@ -50,11 +52,18 @@ export class MenuManager {
 		this.Size.value = this.Size.defaultValue
 		this.State.value = this.State.defaultValue
 		this.FormatTime.value = this.FormatTime.defaultValue
-		NotificationsSDK.Push(new ResetSettingsUpdated())
 		this.sleeper.Sleep(2 * 1000, "ResetSettings")
+		NotificationsSDK.Push(new ResetSettingsUpdated())
 	}
 
 	public GameChanged() {
 		this.sleeper.FullReset()
+	}
+
+	public MenuChanged(callback: () => void) {
+		this.Size.OnValue(() => callback())
+		this.State.OnValue(() => callback())
+		this.reset.OnValue(() => callback())
+		this.FormatTime.OnValue(() => callback())
 	}
 }
