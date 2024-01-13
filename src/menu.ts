@@ -10,6 +10,7 @@ export class MenuManager {
 	public readonly Tree: Menu.Node
 	public readonly Size: Menu.Slider
 	public readonly State: Menu.Toggle
+	public readonly RadiusState: Menu.Toggle
 	public readonly FormatTime: Menu.Toggle
 
 	private readonly reset: Menu.Button
@@ -21,9 +22,14 @@ export class MenuManager {
 			"Watchers",
 			ImageData.Paths.AbilityIcons + "/watcher_channel_png.vtex_c"
 		)
+		this.Tree.SortNodes = false
 
 		this.State = this.Tree.AddToggle("State", true)
-
+		this.RadiusState = this.Tree.AddToggle(
+			"Vision radius",
+			true,
+			"Enemy vision radius"
+		)
 		this.FormatTime = this.Tree.AddToggle(
 			"Format time",
 			true,
@@ -52,6 +58,7 @@ export class MenuManager {
 		this.Size.value = this.Size.defaultValue
 		this.State.value = this.State.defaultValue
 		this.FormatTime.value = this.FormatTime.defaultValue
+		this.RadiusState.value = this.RadiusState.defaultValue
 		this.sleeper.Sleep(2 * 1000, "ResetSettings")
 		NotificationsSDK.Push(new ResetSettingsUpdated())
 	}
@@ -65,5 +72,6 @@ export class MenuManager {
 		this.State.OnValue(() => callback())
 		this.reset.OnValue(() => callback())
 		this.FormatTime.OnValue(() => callback())
+		this.RadiusState.OnValue(() => callback())
 	}
 }

@@ -4,7 +4,6 @@ import {
 	Color,
 	DOTAGameState,
 	DOTAGameUIState,
-	Entity,
 	EventsSDK,
 	GameRules,
 	GameState,
@@ -57,11 +56,17 @@ const bootstrap = new (class CLanternESP {
 				this.menu.Size.value,
 				this.menu.FormatTime.value
 			)
+			// const keyName = modifier.Name + "_" + owner.Index
+			// const particle = this.pSDK.AllParticles.get(keyName)
+			// if (particle === undefined || particle.ControlPoints.get(0) === undefined) {
+			// 	return
+			// }
+			// this.pSDK.SetConstrolPointByKey(
+			// 	modifier.Name + "_" + owner.Index,
+			// 	0,
+			// 	owner.Position
+			// )
 		}
-	}
-
-	public Tick() {
-		/** @todo */
 	}
 
 	public ModifierCreated(modifier: Modifier) {
@@ -74,26 +79,13 @@ const bootstrap = new (class CLanternESP {
 	public ModifierRemoved(modifier: Modifier) {
 		if (this.buffNames.includes(modifier.Name)) {
 			this.modifiers.remove(modifier)
-			this.UpdateRadius(modifier)
+			this.UpdateRadius(modifier, true)
 		}
-	}
-
-	public EntityTeamChanged(entity: Entity) {
-		// if (!(entity instanceof Lantern)) {
-		// 	return
-		// }
-		// console.log("EntityTeamChanged", entity)
-	}
-
-	public EntityDestroyed(entity: Entity) {
-		// if (!(entity instanceof Lantern)) {
-		// 	return
-		// }
-		// console.log("EntityDestroyed", entity)
 	}
 
 	public GameChanged() {
 		this.menu.GameChanged()
+		this.pSDK.DestroyAll()
 	}
 
 	protected UpdateRadius(modifier: Modifier, destroy = false) {
@@ -102,15 +94,17 @@ const bootstrap = new (class CLanternESP {
 		if (owner === undefined || caster === undefined) {
 			return
 		}
+		const menu = this.menu
+		const state = menu.State.value && menu.RadiusState.value
 		const keyName = modifier.Name + "_" + owner.Index
-		if (destroy || !this.menu.State.value) {
+		if (!state || destroy || !caster.IsEnemy()) {
 			this.pSDK.DestroyByKey(keyName)
 			return
 		}
 		switch (modifier.Name) {
 			case "modifier_lamp_on":
 				this.pSDK.DrawCircle(keyName, owner, owner.Vision, {
-					Color: caster.IsEnemy() ? Color.Red : Color.Green
+					Color: Color.Red
 				})
 				break
 			case "modifier_lamp_off":
@@ -128,8 +122,6 @@ const bootstrap = new (class CLanternESP {
 
 EventsSDK.on("Draw", () => bootstrap.Draw())
 
-EventsSDK.on("Tick", () => bootstrap.Tick())
-
 EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
 
 EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
@@ -137,7 +129,3 @@ EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
 EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
 
 EventsSDK.on("ModifierRemoved", modifier => bootstrap.ModifierRemoved(modifier))
-
-EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityTeamChanged(entity))
-
-EventsSDK.on("EntityTeamChanged", entity => bootstrap.EntityTeamChanged(entity))
