@@ -33,7 +33,7 @@ export class MenuManager {
 
 		this.Size = this.Tree.AddSlider(
 			"Additional size",
-			0,
+			4,
 			0,
 			18,
 			1,
