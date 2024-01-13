@@ -1,13 +1,13 @@
 import "./translations"
 
 import {
-	Color,
 	DOTAGameState,
 	DOTAGameUIState,
 	EventsSDK,
 	GameRules,
 	GameState,
 	Modifier,
+	ParticleAttachment,
 	ParticlesSDK
 } from "github.com/octarine-public/wrapper/index"
 
@@ -95,22 +95,16 @@ const bootstrap = new (class CLanternESP {
 			return
 		}
 		const menu = this.menu
-		const state = menu.State.value && menu.RadiusState.value
+		const state = menu.State && menu.Radius.value
 		const keyName = modifier.Name + "_" + owner.Index
-		if (!state || destroy || !caster.IsEnemy()) {
+		if (!state || destroy || modifier.Name === "modifier_lamp_off") {
 			this.pSDK.DestroyByKey(keyName)
 			return
 		}
-		switch (modifier.Name) {
-			case "modifier_lamp_on":
-				this.pSDK.DrawCircle(keyName, owner, owner.Vision, {
-					Color: Color.Red
-				})
-				break
-			case "modifier_lamp_off":
-				this.pSDK.DestroyByKey(keyName)
-				break
-		}
+		this.pSDK.DrawCircle(keyName, owner, owner.Vision, {
+			Color: menu.RadiusColor.SelectedColor,
+			Attachment: ParticleAttachment.PATTACH_ABSORIGIN_FOLLOW
+		})
 	}
 
 	protected MenuChanged() {

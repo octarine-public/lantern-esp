@@ -1,4 +1,5 @@
 import {
+	Color,
 	ImageData,
 	Menu,
 	NotificationsSDK,
@@ -10,7 +11,8 @@ export class MenuManager {
 	public readonly Tree: Menu.Node
 	public readonly Size: Menu.Slider
 	public readonly State: Menu.Toggle
-	public readonly RadiusState: Menu.Toggle
+	public readonly Radius: Menu.Toggle
+	public readonly RadiusColor: Menu.ColorPicker
 	public readonly FormatTime: Menu.Toggle
 
 	private readonly reset: Menu.Button
@@ -25,11 +27,8 @@ export class MenuManager {
 		this.Tree.SortNodes = false
 
 		this.State = this.Tree.AddToggle("State", true)
-		this.RadiusState = this.Tree.AddToggle(
-			"Vision radius",
-			true,
-			"Enemy vision radius"
-		)
+		this.Radius = this.Tree.AddToggle("Vision radius", true, "Enemy vision radius")
+
 		this.FormatTime = this.Tree.AddToggle(
 			"Format time",
 			true,
@@ -37,7 +36,6 @@ export class MenuManager {
 			-1,
 			ImageData.Paths.Icons.icon_svg_format_time
 		)
-
 		this.Size = this.Tree.AddSlider(
 			"Additional size",
 			4,
@@ -46,6 +44,8 @@ export class MenuManager {
 			1,
 			"Additional timer size and hero image"
 		)
+		this.RadiusColor = this.Tree.AddColorPicker("Radius color", Color.Red)
+		this.Radius.OnValue(call => (this.RadiusColor.IsHidden = !call.value))
 
 		this.reset = this.Tree.AddButton("Reset settings")
 		this.reset.OnValue(() => this.ResetSettings())
@@ -57,8 +57,9 @@ export class MenuManager {
 		}
 		this.Size.value = this.Size.defaultValue
 		this.State.value = this.State.defaultValue
+		this.Radius.value = this.Radius.defaultValue
 		this.FormatTime.value = this.FormatTime.defaultValue
-		this.RadiusState.value = this.RadiusState.defaultValue
+		this.RadiusColor.SelectedColor.CopyFrom(this.RadiusColor.defaultColor)
 		this.sleeper.Sleep(2 * 1000, "ResetSettings")
 		NotificationsSDK.Push(new ResetSettingsUpdated())
 	}
@@ -71,7 +72,8 @@ export class MenuManager {
 		this.Size.OnValue(() => callback())
 		this.State.OnValue(() => callback())
 		this.reset.OnValue(() => callback())
+		this.Radius.OnValue(() => callback())
 		this.FormatTime.OnValue(() => callback())
-		this.RadiusState.OnValue(() => callback())
+		this.RadiusColor.OnValue(() => callback())
 	}
 }
