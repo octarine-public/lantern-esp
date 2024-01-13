@@ -4,6 +4,7 @@ import {
 	Color,
 	DOTAGameState,
 	DOTAGameUIState,
+	Entity,
 	EventsSDK,
 	GameRules,
 	GameState,
@@ -59,6 +60,10 @@ const bootstrap = new (class CLanternESP {
 		}
 	}
 
+	public Tick() {
+		/** @todo */
+	}
+
 	public ModifierCreated(modifier: Modifier) {
 		if (this.buffNames.includes(modifier.Name)) {
 			this.modifiers.push(modifier)
@@ -71,6 +76,20 @@ const bootstrap = new (class CLanternESP {
 			this.modifiers.remove(modifier)
 			this.UpdateRadius(modifier)
 		}
+	}
+
+	public EntityTeamChanged(entity: Entity) {
+		// if (!(entity instanceof Lantern)) {
+		// 	return
+		// }
+		// console.log("EntityTeamChanged", entity)
+	}
+
+	public EntityDestroyed(entity: Entity) {
+		// if (!(entity instanceof Lantern)) {
+		// 	return
+		// }
+		// console.log("EntityDestroyed", entity)
 	}
 
 	public GameChanged() {
@@ -109,6 +128,8 @@ const bootstrap = new (class CLanternESP {
 
 EventsSDK.on("Draw", () => bootstrap.Draw())
 
+EventsSDK.on("Tick", () => bootstrap.Tick())
+
 EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
 
 EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
@@ -116,3 +137,7 @@ EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
 EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
 
 EventsSDK.on("ModifierRemoved", modifier => bootstrap.ModifierRemoved(modifier))
+
+EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityTeamChanged(entity))
+
+EventsSDK.on("EntityTeamChanged", entity => bootstrap.EntityTeamChanged(entity))
