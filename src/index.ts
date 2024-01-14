@@ -97,7 +97,8 @@ const bootstrap = new (class CLanternESP {
 		const menu = this.menu
 		const state = menu.State && menu.Radius.value
 		const keyName = modifier.Name + "_" + owner.Index
-		if (!state || destroy || modifier.Name === "modifier_lamp_off") {
+		const modIsOff = modifier.Name === "modifier_lamp_off"
+		if (!state || destroy || modIsOff || !caster.IsEnemy()) {
 			this.pSDK.DestroyByKey(keyName)
 			return
 		}
