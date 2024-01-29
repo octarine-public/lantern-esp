@@ -3,12 +3,15 @@ import "./translations"
 import {
 	DOTAGameState,
 	DOTAGameUIState,
+	Entity,
 	EventsSDK,
 	GameRules,
 	GameState,
+	Lantern,
 	Modifier,
 	ParticleAttachment,
-	ParticlesSDK
+	ParticlesSDK,
+	Team
 } from "github.com/octarine-public/wrapper/index"
 
 import { LanternGUI } from "./gui"
@@ -19,6 +22,7 @@ const bootstrap = new (class CLanternESP {
 	private readonly menu = new MenuManager()
 	private readonly pSDK = new ParticlesSDK()
 
+	private readonly lanterns: Lantern[] = []
 	private readonly modifiers: Modifier[] = []
 	private readonly buffNames = ["modifier_lamp_on", "modifier_lamp_off"]
 
@@ -56,61 +60,63 @@ const bootstrap = new (class CLanternESP {
 				this.menu.Size.value,
 				this.menu.FormatTime.value
 			)
-			// const keyName = modifier.Name + "_" + owner.Index
-			// const particle = this.pSDK.AllParticles.get(keyName)
-			// if (particle === undefined || particle.ControlPoints.get(0) === undefined) {
-			// 	return
-			// }
-			// this.pSDK.SetConstrolPointByKey(
-			// 	modifier.Name + "_" + owner.Index,
-			// 	0,
-			// 	owner.Position
-			// )
+		}
+	}
+
+	public EntityCreated(entity: Entity) {
+		if (entity instanceof Lantern) {
+			this.lanterns.push(entity)
+			this.UpdateRadius(entity)
+		}
+	}
+
+	public EntityDestroyed(entity: Entity) {
+		if (entity instanceof Lantern) {
+			this.lanterns.remove(entity)
+			this.UpdateRadius(entity, true)
+		}
+	}
+
+	public EntityTeamChanged(entity: Entity) {
+		if (entity instanceof Lantern) {
+			this.UpdateRadius(entity)
 		}
 	}
 
 	public ModifierCreated(modifier: Modifier) {
 		if (this.buffNames.includes(modifier.Name)) {
 			this.modifiers.push(modifier)
-			this.UpdateRadius(modifier)
 		}
 	}
 
 	public ModifierRemoved(modifier: Modifier) {
 		if (this.buffNames.includes(modifier.Name)) {
 			this.modifiers.remove(modifier)
-			this.UpdateRadius(modifier, true)
 		}
 	}
 
 	public GameChanged() {
 		this.menu.GameChanged()
-		this.pSDK.DestroyAll()
 	}
 
-	protected UpdateRadius(modifier: Modifier, destroy = false) {
-		const owner = modifier.Parent
-		const caster = modifier.Caster
-		if (owner === undefined || caster === undefined) {
-			return
-		}
+	protected UpdateRadius(lantern: Lantern, destroy = false) {
 		const menu = this.menu
 		const state = menu.State && menu.Radius.value
-		const keyName = modifier.Name + "_" + owner.Index
-		const modIsOff = modifier.Name === "modifier_lamp_off"
-		if (!state || destroy || modIsOff || !caster.IsEnemy()) {
+		const keyName = lantern.Name + "_" + lantern.Index
+		if (!state || destroy || !lantern.IsEnemy() || lantern.Team === Team.Neutral) {
 			this.pSDK.DestroyByKey(keyName)
 			return
 		}
-		this.pSDK.DrawCircle(keyName, owner, owner.Vision, {
+		this.pSDK.DrawCircle(keyName, lantern, lantern.Vision, {
+			Fill: menu.Fill.value,
 			Color: menu.RadiusColor.SelectedColor,
 			Attachment: ParticleAttachment.PATTACH_ABSORIGIN_FOLLOW
 		})
 	}
 
 	protected MenuChanged() {
-		for (let index = this.modifiers.length - 1; index > -1; index--) {
-			this.UpdateRadius(this.modifiers[index])
+		for (let index = this.lanterns.length - 1; index > -1; index--) {
+			this.UpdateRadius(this.lanterns[index])
 		}
 	}
 })()
@@ -120,6 +126,14 @@ EventsSDK.on("Draw", () => bootstrap.Draw())
 EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
 
 EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
+
+EventsSDK.on("EntityCreated", entity => bootstrap.EntityCreated(entity))
+
+EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityDestroyed(entity))
+
+EventsSDK.on("EntityTeamChanged", entity => bootstrap.EntityTeamChanged(entity))
+
+EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
 
 EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
 

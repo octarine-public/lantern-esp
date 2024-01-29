@@ -9,5 +9,7 @@
 	"Additional timer size and hero image": "Доп. размер таймера и изображения героя",
 	"Vision radius": "Радиус обзора",
 	"Enemy vision radius": "Вражеский радиус обзора",
-	"Radius color": "Цвет радиуса"
+	"Radius color": "Цвет радиуса",
+	"Fill": "Заливка",
+	"Fill radius insides color": "Цвет заливки внутри радиуса"
 }

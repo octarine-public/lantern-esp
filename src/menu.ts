@@ -11,6 +11,7 @@ export class MenuManager {
 	public readonly Tree: Menu.Node
 	public readonly Size: Menu.Slider
 	public readonly State: Menu.Toggle
+	public readonly Fill: Menu.Toggle
 	public readonly Radius: Menu.Toggle
 	public readonly RadiusColor: Menu.ColorPicker
 	public readonly FormatTime: Menu.Toggle
@@ -28,6 +29,7 @@ export class MenuManager {
 
 		this.State = this.Tree.AddToggle("State", true)
 		this.Radius = this.Tree.AddToggle("Vision radius", true, "Enemy vision radius")
+		this.Fill = this.Tree.AddToggle("Fill", true, "Fill radius insides color")
 
 		this.FormatTime = this.Tree.AddToggle(
 			"Format time",
@@ -45,7 +47,10 @@ export class MenuManager {
 			"Additional timer size and hero image"
 		)
 		this.RadiusColor = this.Tree.AddColorPicker("Radius color", Color.Red)
-		this.Radius.OnValue(call => (this.RadiusColor.IsHidden = !call.value))
+		this.Radius.OnValue(call => {
+			this.Fill.IsHidden = !call.value
+			this.RadiusColor.IsHidden = !call.value
+		})
 
 		this.reset = this.Tree.AddButton("Reset settings")
 		this.reset.OnValue(() => this.ResetSettings())
@@ -56,6 +61,7 @@ export class MenuManager {
 			return
 		}
 		this.Size.value = this.Size.defaultValue
+		this.Fill.value = this.Fill.defaultValue
 		this.State.value = this.State.defaultValue
 		this.Radius.value = this.Radius.defaultValue
 		this.FormatTime.value = this.FormatTime.defaultValue
