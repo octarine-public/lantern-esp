@@ -135,6 +135,4 @@ EventsSDK.on("EntityTeamChanged", entity => bootstrap.EntityTeamChanged(entity))
 
 EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
 
-EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
-
 EventsSDK.on("ModifierRemoved", modifier => bootstrap.ModifierRemoved(modifier))
