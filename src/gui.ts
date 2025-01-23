@@ -81,7 +81,7 @@ export class LanternGUI {
 		const islantern = unitName.includes("lantern")
 		const Image = islantern
 			? this.iconLock
-			: ImageData.GetUnitTexture(unitName, true) ?? ""
+			: (ImageData.GetUnitTexture(unitName, true) ?? "")
 		RendererSDK.Image(
 			Image,
 			this.iconRecPos.pos1,

@@ -17,7 +17,7 @@ import {
 import { LanternGUI } from "./gui"
 import { MenuManager } from "./menu"
 
-const bootstrap = new (class CLanternESP {
+new (class CLanternESP {
 	private readonly gui = new LanternGUI()
 	private readonly menu = new MenuManager()
 	private readonly pSDK = new ParticlesSDK()
@@ -28,6 +28,12 @@ const bootstrap = new (class CLanternESP {
 
 	constructor() {
 		this.menu.MenuChanged(() => this.MenuChanged())
+		EventsSDK.on("Draw", () => this.Draw.bind(this))
+		EventsSDK.on("EntityCreated", this.EntityCreated.bind(this))
+		EventsSDK.on("EntityDestroyed", this.EntityDestroyed.bind(this))
+		EventsSDK.on("EntityTeamChanged", this.EntityTeamChanged.bind(this))
+		EventsSDK.on("ModifierCreated", this.ModifierCreated.bind(this))
+		EventsSDK.on("ModifierRemoved", this.ModifierRemoved.bind(this))
 	}
 
 	protected get IsPostGame() {
@@ -95,10 +101,6 @@ const bootstrap = new (class CLanternESP {
 		}
 	}
 
-	public GameChanged() {
-		this.menu.GameChanged()
-	}
-
 	protected UpdateRadius(lantern: Lantern, destroy = false) {
 		const menu = this.menu
 		const state = menu.State && menu.Radius.value
@@ -120,19 +122,3 @@ const bootstrap = new (class CLanternESP {
 		}
 	}
 })()
-
-EventsSDK.on("Draw", () => bootstrap.Draw())
-
-EventsSDK.on("GameEnded", () => bootstrap.GameChanged())
-
-EventsSDK.on("GameStarted", () => bootstrap.GameChanged())
-
-EventsSDK.on("EntityCreated", entity => bootstrap.EntityCreated(entity))
-
-EventsSDK.on("EntityDestroyed", entity => bootstrap.EntityDestroyed(entity))
-
-EventsSDK.on("EntityTeamChanged", entity => bootstrap.EntityTeamChanged(entity))
-
-EventsSDK.on("ModifierCreated", modifier => bootstrap.ModifierCreated(modifier))
-
-EventsSDK.on("ModifierRemoved", modifier => bootstrap.ModifierRemoved(modifier))
