@@ -52,9 +52,6 @@ export class LanternManager {
 		}
 		this.lastAnimation.push([hero, time])
 	}
-	public EntityCreated(entity: Lantern) {
-		this.updateRadius(entity)
-	}
 	public EntityDestroyed(entity: Hero | Lantern) {
 		if (entity instanceof Hero) {
 			this.lastAnimation.removeCallback((x: [Hero, number]) => x[0] === entity)
@@ -83,6 +80,11 @@ export class LanternManager {
 		this.inactiveDuration = abilData.GetSpecialValue("inactive_duration", 1)
 		this.activeDuration = abilData.GetSpecialValue("active_duration", 1)
 	}
+	public GameEnded() {
+		this.gui.clear()
+		this.pSDK.DestroyAll()
+		this.lastAnimation.clear()
+	}
 	private getKeyName(entity: Lantern) {
 		return `${entity.Index}_${entity.Name}`
 	}
@@ -100,7 +102,7 @@ export class LanternManager {
 			this.pSDK.DestroyByKey(this.getKeyName(lantern))
 			return
 		}
-		this.pSDK.DrawCircle(this.getKeyName(lantern), lantern, lantern.Vision, {
+		this.pSDK.DrawCircle(this.getKeyName(lantern), lantern, lantern.VisionRange, {
 			Fill: this.menu.Fill.value,
 			Color: this.menu.RadiusColor.SelectedColor,
 			Attachment: ParticleAttachment.PATTACH_ABSORIGIN_FOLLOW
@@ -118,14 +120,15 @@ export class LanternManager {
 			return
 		}
 		const heroName = lastAnimation?.[0].Name
+		const isEnemy = lastAnimation?.[0].IsEnemy() ?? true
 		const find = this.gui.find(x => x.KeyName === keyName)
 		const position = entity.Position.Clone().AddScalarZ(entity.HealthBarOffset)
 		if (find !== undefined) {
-			find.UpdateData(heroName, isActive, position)
+			find.UpdateData(heroName, isActive, isEnemy, position)
 			return
 		}
 		const newClass = new GUI(keyName, this.activeDuration, this.inactiveDuration)
-		newClass.UpdateData(heroName, isActive, position)
+		newClass.UpdateData(heroName, isActive, isEnemy, position)
 		this.gui.push(newClass)
 	}
 }

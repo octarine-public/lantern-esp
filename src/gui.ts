@@ -4,6 +4,7 @@ import {
 	GUIInfo,
 	ImageData,
 	MathSDK,
+	MinimapSDK,
 	Rectangle,
 	RendererSDK,
 	Vector2,
@@ -16,6 +17,7 @@ export class GUI {
 	private static readonly basePath = "github.com/octarine-public/lantern-esp"
 	private static readonly lock = this.basePath + "/scripts_files/icons/lock.svg"
 
+	public IsEnemy = false
 	public IsActive = false
 	public Inactive = false
 
@@ -50,15 +52,18 @@ export class GUI {
 		if (!menu.State.value) {
 			return
 		}
-		const w2s = RendererSDK.WorldToScreen(this.Position)
-		if (w2s === undefined || GUIInfo.Contains(w2s)) {
-			return
-		}
 		let time = 0
 		if (this.IsActive) {
 			time = this.activeTime
 		} else if (this.Inactive) {
 			time = this.invactiveTime
+		}
+
+		this.updateMiniMap(this.Position)
+
+		const w2s = RendererSDK.WorldToScreen(this.Position)
+		if (w2s === undefined || GUIInfo.Contains(w2s)) {
+			return
 		}
 		const size = menu.Size.value + 12,
 			scale = GUIInfo.ScaleVector(size, size),
@@ -70,7 +75,13 @@ export class GUI {
 			this.drawProgress(base)
 		}
 	}
-	public UpdateData(heroName: Nullable<string>, isActive: boolean, position: Vector3) {
+	public UpdateData(
+		heroName: Nullable<string>,
+		isActive: boolean,
+		isEnemy: boolean,
+		position: Vector3
+	) {
+		this.IsEnemy = isEnemy
 		this.HeroName = heroName
 		this.IsActive = isActive
 		this.Position.CopyFrom(position)
@@ -95,13 +106,13 @@ export class GUI {
 			return
 		}
 		const position = base.Clone(),
-			texture = ImageData.GetUnitTexture(this.lastPorgressHeroName)
+			texture = ImageData.GetHeroTexture(this.lastPorgressHeroName)
 
 		position.Width *= 2
 		position.Height *= 2
 		position.SubtractX(position.Width / 2)
 		position.SubtractY(position.Height / 2)
-		RendererSDK.Image(texture ?? "", position.pos1, 0, position.Size, Color.White)
+		RendererSDK.Image(texture, position.pos1, 0, position.Size, Color.White)
 
 		const rawTime = GameState.RawGameTime,
 			time = Math.max(this.lastPorgressTime - rawTime, 0),
@@ -174,11 +185,8 @@ export class GUI {
 		const position = rec.Clone()
 		const startPos = position.pos1.AddScalarX(position.Width)
 		const size = new Vector2(position.Height, position.Height)
-		const imagePath = ImageData.GetUnitTexture(heroName, true)
-		if (imagePath === undefined) {
-			return
-		}
-		RendererSDK.Image(imagePath ?? "", startPos, -1, size, Color.White)
+		const imagePath = ImageData.GetHeroTexture(heroName, true)
+		RendererSDK.Image(imagePath, startPos, -1, size, Color.White)
 	}
 	private arc(decimal: number, position: Vector2, size: Vector2, border = 5) {
 		border = Math.round(border)
@@ -190,5 +198,13 @@ export class GUI {
 		}
 		RendererSDK.Arc(-90, 100, position, size, false, border, Color.Black)
 		RendererSDK.Arc(-90, ratio, position, size, false, border, borderColor)
+	}
+
+	private updateMiniMap(position: Vector3) {
+		if (!this.IsActive || !this.IsEnemy) {
+			MinimapSDK.DeleteIcon(this.KeyName)
+			return
+		}
+		MinimapSDK.DrawIcon("watcher", position, 150, Color.Red, 0, this.KeyName)
 	}
 }

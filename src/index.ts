@@ -28,10 +28,10 @@ new (class CLanternESP {
 		EventsSDK.on("Draw", this.Draw.bind(this))
 		EventsSDK.on("UnitAnimation", this.UnitAnimation.bind(this))
 		EventsSDK.on("UnitStateChanged", this.UnitStateChanged.bind(this))
-		EventsSDK.on("EntityCreated", this.EntityCreated.bind(this))
 		EventsSDK.on("EntityDestroyed", this.EntityDestroyed.bind(this))
 		EventsSDK.on("UnitAbilityDataUpdated", this.UnitAbilityDataUpdated.bind(this))
 		EventsSDK.on("ParticleCreated", this.ParticleCreated.bind(this))
+		EventsSDK.on("GameEnded", this.GameEnded.bind(this))
 	}
 
 	private get isInGameUI() {
@@ -76,17 +76,15 @@ new (class CLanternESP {
 			this.manager.UnitAnimation(npc)
 		}
 	}
-	protected EntityCreated(entity: Entity) {
-		if (entity instanceof Lantern) {
-			this.manager.EntityCreated(entity)
-		}
-	}
 	protected EntityDestroyed(entity: Entity) {
+		if (entity instanceof Lantern) {
+			this.manager.EntityDestroyed(entity)
+		}
 		if (entity instanceof Hero && entity.IsIllusion) {
 			this.manager.EntityDestroyed(entity)
 		}
-		if (entity instanceof Lantern) {
-			this.manager.EntityDestroyed(entity)
-		}
+	}
+	protected GameEnded() {
+		this.manager.GameEnded()
 	}
 })()
