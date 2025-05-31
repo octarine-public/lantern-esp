@@ -72,7 +72,11 @@ new (class CLanternESP {
 		_type: number,
 		activity: number
 	) {
-		if (npc instanceof Hero && activity === GameActivity.ACT_DOTA_GENERIC_CHANNEL_1) {
+		if (!(npc instanceof Hero || npc instanceof FakeUnit)) {
+			return
+		}
+
+		if (activity === GameActivity.ACT_DOTA_GENERIC_CHANNEL_1) {
 			this.manager.UnitAnimation(npc)
 		}
 	}

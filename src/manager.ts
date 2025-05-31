@@ -1,5 +1,6 @@
 import {
 	AbilityData,
+	FakeUnit,
 	GameState,
 	Hero,
 	Lantern,
@@ -14,7 +15,7 @@ import { MenuManager } from "./menu"
 export class LanternManager {
 	private readonly gui: GUI[] = []
 	private readonly pSDK = new ParticlesSDK()
-	private readonly lastAnimation: [Hero, number][] = []
+	private readonly lastAnimation: [Hero | FakeUnit, number][] = []
 
 	private channelTime: number = 0
 	private activeDuration: number = 0
@@ -39,7 +40,7 @@ export class LanternManager {
 			this.updateGUIData(entity, lastAnimation, false, true)
 		}
 	}
-	public UnitAnimation(hero: Hero) {
+	public UnitAnimation(hero: Hero | FakeUnit) {
 		if (this.channelTime === 0) {
 			return
 		}
@@ -54,7 +55,9 @@ export class LanternManager {
 	}
 	public EntityDestroyed(entity: Hero | Lantern) {
 		if (entity instanceof Hero) {
-			this.lastAnimation.removeCallback((x: [Hero, number]) => x[0] === entity)
+			this.lastAnimation.removeCallback(
+				(x: [Hero | FakeUnit, number]) => x[0] === entity
+			)
 		}
 		if (entity instanceof Lantern) {
 			this.updateRadius(entity, true)
@@ -63,7 +66,8 @@ export class LanternManager {
 	}
 	public ParticleCreated(entity: Lantern) {
 		const lastAnimation = this.lastAnimation.find(x => x[1] >= GameState.RawGameTime)
-		if (lastAnimation === undefined || !lastAnimation[0].IsEnemy()) {
+		const isEnemy = this.isEnemy(lastAnimation?.[0])
+		if (lastAnimation === undefined || !isEnemy) {
 			return
 		}
 		const find = this.gui.find(x => x.KeyName === this.getKeyName(entity))
@@ -91,13 +95,13 @@ export class LanternManager {
 	private updateRadius(
 		lantern: Lantern,
 		destroy = false,
-		lastAnimation?: [Hero, number]
+		lastAnimation?: [Hero | FakeUnit, number]
 	) {
 		const state = this.menu.State && this.menu.Radius.value
 		const isProvidesVision = lantern.IsUnitStateFlagSet(
 			modifierstate.MODIFIER_STATE_PROVIDES_VISION
 		)
-		const isEnemy = lastAnimation?.[0].IsEnemy() ?? false
+		const isEnemy = this.isEnemy(lastAnimation?.[0])
 		if (!state || destroy || !isProvidesVision || !isEnemy) {
 			this.pSDK.DestroyByKey(this.getKeyName(lantern))
 			return
@@ -110,7 +114,7 @@ export class LanternManager {
 	}
 	private updateGUIData(
 		entity: Lantern,
-		lastAnimation: Nullable<[Hero, number]>,
+		lastAnimation: Nullable<[Hero | FakeUnit, number]>,
 		destroy = false,
 		isActive = false
 	) {
@@ -119,8 +123,9 @@ export class LanternManager {
 			this.gui.removeCallback(x => x.KeyName === keyName)
 			return
 		}
+
 		const heroName = lastAnimation?.[0].Name
-		const isEnemy = lastAnimation?.[0].IsEnemy() ?? true
+		const isEnemy = this.isEnemy(lastAnimation?.[0])
 		const find = this.gui.find(x => x.KeyName === keyName)
 		const position = entity.Position.Clone().AddScalarZ(entity.HealthBarOffset)
 		if (find !== undefined) {
@@ -130,5 +135,8 @@ export class LanternManager {
 		const newClass = new GUI(keyName, this.activeDuration, this.inactiveDuration)
 		newClass.UpdateData(heroName, isActive, isEnemy, position)
 		this.gui.push(newClass)
+	}
+	private isEnemy(entity: Nullable<Hero | FakeUnit>) {
+		return entity instanceof FakeUnit ? true : (entity?.IsEnemy() ?? false)
 	}
 }
