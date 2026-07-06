@@ -132,7 +132,12 @@ export class LanternManager {
 			find.UpdateData(heroName, isActive, isEnemy, position)
 			return
 		}
-		const newClass = new GUI(keyName, this.activeDuration, this.inactiveDuration)
+		const newClass = new GUI(
+			keyName,
+			entity.Index,
+			this.activeDuration,
+			this.inactiveDuration
+		)
 		newClass.UpdateData(heroName, isActive, isEnemy, position)
 		this.gui.push(newClass)
 	}

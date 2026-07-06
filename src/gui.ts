@@ -13,6 +13,8 @@ import {
 
 import { MenuManager } from "./menu"
 
+const LANTERN_KIND = RendererSDK.AllocateAnchorKind()
+
 export class GUI {
 	private static readonly basePath = "github.com/octarine-public/lantern-esp"
 	private static readonly lock = this.basePath + "/scripts_files/icons/lock.svg"
@@ -31,6 +33,7 @@ export class GUI {
 
 	constructor(
 		public readonly KeyName: string,
+		public readonly EntityIndex: number,
 		private readonly activeDuration: number,
 		private readonly inactiveDuration: number
 	) {
@@ -65,15 +68,33 @@ export class GUI {
 		if (w2s === undefined || GUIInfo.Contains(w2s)) {
 			return
 		}
-		const size = menu.Size.value + 12,
+		const hasProgress = this.lastPorgressTime > GameState.RawGameTime
+		if (time === 0 && !hasProgress) {
+			return
+		}
+		const zero = new Vector2(),
+			size = menu.Size.value + 12,
 			scale = GUIInfo.ScaleVector(size, size),
-			base = new Rectangle(w2s, w2s.Add(scale)).Subtract(scale.DivideScalar(3))
-		if (time !== 0) {
-			this.drawCapturedInfo(base, time, menu)
-		}
-		if (this.lastPorgressTime > GameState.RawGameTime) {
-			this.drawProgress(base)
-		}
+			base = new Rectangle(zero, zero.Add(scale)).Subtract(scale.DivideScalar(3))
+		RendererSDK.DrawEntityRelative(
+			this.EntityIndex,
+			LANTERN_KIND,
+			() => {
+				const pos = RendererSDK.WorldToScreen(this.Position)
+				if (pos === undefined || GUIInfo.Contains(pos)) {
+					return undefined
+				}
+				return pos
+			},
+			() => {
+				if (time !== 0) {
+					this.drawCapturedInfo(base, time, menu)
+				}
+				if (hasProgress) {
+					this.drawProgress(base)
+				}
+			}
+		)
 	}
 	public UpdateData(
 		heroName: Nullable<string>,
@@ -87,12 +108,14 @@ export class GUI {
 		this.Position.CopyFrom(position)
 		this.LastUpdateTime = GameState.RawGameTime
 		this.Inactive = !this.IsActive && this.HeroName !== undefined
+		RendererSDK.InvalidateDraw2D()
 	}
 	public UpdateProgressCapture(channelTime: number, heroName: string) {
 		const tick = GameState.TickInterval
 		this.channelTime = channelTime
 		this.lastPorgressHeroName = heroName
 		this.lastPorgressTime = GameState.RawGameTime + channelTime + tick * 2
+		RendererSDK.InvalidateDraw2D()
 	}
 	protected UpdateInactive() {
 		if (!this.Inactive) {

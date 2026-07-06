@@ -12,6 +12,7 @@ import {
 	Hero,
 	Lantern,
 	NetworkedParticle,
+	RendererSDK,
 	Unit
 } from "github.com/octarine-public/wrapper/index"
 
@@ -25,7 +26,8 @@ new (class CLanternESP {
 		"particles/econ/items/items_fx/lantern_of_sight_channeling.vpcf"
 
 	constructor() {
-		EventsSDK.on("Draw", this.Draw.bind(this))
+		EventsSDK.on("Draw2D", this.Draw.bind(this))
+		this.menu.MenuChanged(() => RendererSDK.InvalidateDraw2D())
 		EventsSDK.on("UnitAnimation", this.UnitAnimation.bind(this))
 		EventsSDK.on("UnitStateChanged", this.UnitStateChanged.bind(this))
 		EventsSDK.on("EntityDestroyed", this.EntityDestroyed.bind(this))
