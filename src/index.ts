@@ -1,20 +1,5 @@
 import "./translations"
 
-import {
-	DOTAGameState,
-	DOTAGameUIState,
-	Entity,
-	EventsSDK,
-	FakeUnit,
-	GameActivity,
-	GameRules,
-	GameState,
-	Hero,
-	Lantern,
-	NetworkedParticle,
-	Unit
-} from "github.com/octarine-public/wrapper/index"
-
 import { LanternManager } from "./manager"
 import { MenuManager } from "./menu"
 
@@ -39,8 +24,8 @@ new (class CLanternESP {
 	}
 	private get isPostGame() {
 		return (
-			GameRules === undefined ||
-			GameRules.GameState === DOTAGameState.DOTA_GAMERULES_STATE_POST_GAME
+			Dota2SDK.GameRules === undefined ||
+			Dota2SDK.GameRules.GameState === DOTAGameState.DOTA_GAMERULES_STATE_POST_GAME
 		)
 	}
 	protected Draw() {
@@ -60,12 +45,12 @@ new (class CLanternESP {
 		if (particle.PathNoEcon !== this.parName) {
 			return
 		}
-		if (particle.ModifiersAttachedTo instanceof Lantern) {
-			this.manager.ParticleCreated(particle.ModifiersAttachedTo)
+		if (particle.ModifiersAttached instanceof Lantern) {
+			this.manager.ParticleCreated(particle.ModifiersAttached)
 		}
 	}
 	protected UnitAnimation(
-		npc: Unit | FakeUnit,
+		npc: Nullable<Unit | FakeUnit>,
 		_seq: number,
 		_rate: number,
 		_castPoint: number,

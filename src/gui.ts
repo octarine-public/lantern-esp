@@ -1,15 +1,3 @@
-import {
-	Color,
-	GameState,
-	GUIInfo,
-	ImageData,
-	MathSDK,
-	MinimapSDK,
-	Rectangle,
-	RendererSDK,
-	Vector2,
-	Vector3
-} from "github.com/octarine-public/wrapper/index"
 
 import { MenuManager } from "./menu"
 
@@ -133,7 +121,7 @@ export class GUI {
 		this.imageHero(position)
 
 		const text = menu.FormatTime.value
-			? MathSDK.FormatTime(time)
+			? Math.formatTime(time)
 			: time.toFixed(time > 1 ? 0 : 1)
 
 		RendererSDK.TextByFlags(text, position, Color.White, 1.66)

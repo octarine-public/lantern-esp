@@ -1,13 +1,3 @@
-import {
-	AbilityData,
-	FakeUnit,
-	GameState,
-	Hero,
-	Lantern,
-	modifierstate,
-	ParticleAttachment,
-	ParticlesSDK
-} from "github.com/octarine-public/wrapper/index"
 
 import { GUI } from "./gui"
 import { MenuManager } from "./menu"
