@@ -1,4 +1,4 @@
-
+import { canvas } from "../render"
 import { MenuManager } from "./menu"
 
 export class GUI {
@@ -100,13 +100,19 @@ export class GUI {
 		position.Height *= 2
 		position.SubtractX(position.Width / 2)
 		position.SubtractY(position.Height / 2)
-		RendererSDK.Image(texture, position.pos1, 0, position.Size, Color.White)
+		canvas.Image(texture, position.pos1, position.Size, {
+			color: Color.White,
+			circle: true
+		})
 
 		const rawTime = GameState.RawGameTime,
 			time = Math.max(this.lastPorgressTime - rawTime, 0),
 			arcTime = time / this.channelTime
 		this.arc(-arcTime, position.pos1, position.Size, GUIInfo.ScaleHeight(4))
-		RendererSDK.TextByFlags(`${time.toFixed(1)}`, position, Color.White, 2.66)
+		canvas.TextIn(`${time.toFixed(1)}`, position, {
+			color: Color.White,
+			size: position.Height / 2.66 + 4
+		})
 	}
 	private drawCapturedInfo(base: Rectangle, time: number, menu: MenuManager) {
 		const position = base.Clone()
@@ -124,20 +130,21 @@ export class GUI {
 			? Math.formatTime(time)
 			: time.toFixed(time > 1 ? 0 : 1)
 
-		RendererSDK.TextByFlags(text, position, Color.White, 1.66)
+		canvas.TextIn(text, position, {
+			color: Color.White,
+			size: position.Height / 1.66 + 4
+		})
 	}
 	private substrateWorld(rec: Rectangle) {
 		const position = rec.Clone()
 		position.x -= rec.Height
 		position.Width += rec.Height * 2
-		RendererSDK.RectRounded(
-			position.pos1,
-			position.Size,
-			5,
-			Color.Black.SetA(200),
-			Color.Black,
-			1
-		)
+		canvas.Rect(position.pos1, position.Size, {
+			color: Color.Black.SetA(200),
+			borderColor: Color.Black,
+			borderWidth: 1,
+			radius: 2.5
+		})
 		return position
 	}
 	private state(rec: Rectangle, color: Color) {
@@ -145,14 +152,12 @@ export class GUI {
 		position.Height /= 8
 		position.SubtractY(position.Height / 2)
 
-		RendererSDK.RectRounded(
-			position.pos1,
-			position.Size,
-			5,
-			color.SetA(180),
-			Color.Black,
-			1
-		)
+		canvas.Rect(position.pos1, position.Size, {
+			color: color.SetA(180),
+			borderColor: Color.Black,
+			borderWidth: 1,
+			radius: 2.5
+		})
 	}
 	private imageLock(rec: Rectangle, isLocked: boolean) {
 		const position = rec.Clone(),
@@ -163,7 +168,7 @@ export class GUI {
 
 		position.x -= position.Height - position.Height / 6
 		position.y += position.Height / 8
-		RendererSDK.Image(icon, position.pos1, -1, size, color)
+		canvas.Image(icon, position.pos1, size, { color })
 	}
 	private imageHero(rec: Rectangle) {
 		const heroName = this.HeroName
@@ -174,18 +179,34 @@ export class GUI {
 		const startPos = position.pos1.AddScalarX(position.Width)
 		const size = new Vector2(position.Height, position.Height)
 		const imagePath = ImageData.GetHeroTexture(heroName, true)
-		RendererSDK.Image(imagePath, startPos, -1, size, Color.White)
+		canvas.Image(imagePath, startPos, size, { color: Color.White })
 	}
 	private arc(decimal: number, position: Vector2, size: Vector2, border = 5) {
 		border = Math.round(border)
 		const ratio = 100 * decimal
 		const borderColor = new Color(0, 224, 7)
 		if (ratio === 0) {
-			RendererSDK.OutlinedCircle(position, size, Color.Red, border)
+			canvas.Circle(position, size, {
+				color: Color.fromUint32(0),
+				borderColor: Color.Red,
+				borderWidth: border
+			})
 			return
 		}
-		RendererSDK.Arc(-90, 100, position, size, false, border, Color.Black)
-		RendererSDK.Arc(-90, ratio, position, size, false, border, borderColor)
+		canvas.Circle(position, size, {
+			color: Color.fromUint32(0),
+			borderColor: Color.Black,
+			borderWidth: border,
+			start: -90,
+			sweep: -360
+		})
+		canvas.Circle(position, size, {
+			color: Color.fromUint32(0),
+			borderColor,
+			borderWidth: border,
+			start: -90,
+			sweep: -ratio * 3.6
+		})
 	}
 
 	private updateMiniMap(position: Vector3) {
