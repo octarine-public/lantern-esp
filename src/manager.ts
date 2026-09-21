@@ -1,41 +1,59 @@
-
-import { GUI } from "./gui"
+import { WatcherPhase } from "./enums"
+import { WorldChips } from "./gui/entity"
 import { MenuManager } from "./menu"
+import { LanternModel, WatcherTimings } from "./model"
 
 export class LanternManager {
-	private readonly gui: GUI[] = []
+	private readonly models: LanternModel[] = []
 	private readonly pSDK = new ParticlesSDK()
+	private readonly timings = new WatcherTimings()
 	private readonly lastAnimation: [Hero | FakeUnit, number][] = []
-
-	private channelTime: number = 0
-	private activeDuration: number = 0
-	private inactiveDuration: number = 0
 
 	constructor(private readonly menu: MenuManager) {}
 
 	public Draw() {
-		for (let i = this.gui.length - 1; i > -1; i--) {
-			this.gui[i].Draw(this.menu)
+		for (let i = this.models.length - 1; i > -1; i--) {
+			const model = this.models[i]
+			if (model.RadiusDrawn && !model.IsEnemyActive) {
+				this.updateRadius(model)
+			}
+			model.Draw(this.menu)
 		}
-	}
-	public UnitStateChanged(entity: Lantern) {
-		const lastAnimation = this.lastAnimation.find(x => x[1] >= GameState.RawGameTime)
-		if (!entity.IsUnitStateFlagSet(modifierstate.MODIFIER_STATE_PROVIDES_VISION)) {
-			this.updateRadius(entity, true)
-			this.updateGUIData(entity, lastAnimation, false)
+		if (!this.menu.State.value) {
+			WorldChips.Reset()
 			return
 		}
-		if (lastAnimation !== undefined) {
-			this.updateRadius(entity, false, lastAnimation)
-			this.updateGUIData(entity, lastAnimation, false, true)
+		WorldChips.End(this.menu)
+	}
+	/** The game networked the watcher's state, freshly or changed. */
+	public WatcherChanged(lantern: Lantern, modifier: Modifier) {
+		const model = this.modelOf(lantern),
+			channel = this.lastAnimation.find(x => x[1] >= GameState.RawGameTime),
+			seenStart = channel !== undefined || model.Tracked
+		model.Tracked = true
+		const changed = model.Sync(
+			modifier.NetworkArmor as WatcherPhase,
+			modifier.NetworkAttackSpeed as Team,
+			channel?.[0].Name,
+			seenStart
+		)
+		if (changed) {
+			this.updateRadius(model)
+		}
+	}
+	/** The game stopped networking the watcher's state: what it does now goes unseen. */
+	public WatcherRemoved(lantern: Lantern) {
+		const model = this.models.find(x => x.EntityIndex === lantern.Index)
+		if (model !== undefined) {
+			model.Tracked = false
 		}
 	}
 	public UnitAnimation(hero: Hero | FakeUnit) {
-		if (this.channelTime === 0) {
+		if (this.timings.Channel === 0) {
 			return
 		}
 		const tick = GameState.TickInterval
-		const time = GameState.RawGameTime + this.channelTime + tick * 3
+		const time = GameState.RawGameTime + this.timings.Channel + tick * 3
 		const find = this.lastAnimation.find(x => x[0] === hero)
 		if (find !== undefined) {
 			find[1] = time
@@ -50,19 +68,8 @@ export class LanternManager {
 			)
 		}
 		if (entity instanceof Lantern) {
-			this.updateRadius(entity, true)
-			this.updateGUIData(entity, undefined, true)
-		}
-	}
-	public ParticleCreated(entity: Lantern) {
-		const lastAnimation = this.lastAnimation.find(x => x[1] >= GameState.RawGameTime)
-		const isEnemy = this.isEnemy(lastAnimation?.[0])
-		if (lastAnimation === undefined || !isEnemy) {
-			return
-		}
-		const find = this.gui.find(x => x.KeyName === this.getKeyName(entity))
-		if (find !== undefined) {
-			find.UpdateProgressCapture(this.channelTime, lastAnimation[0].Name)
+			this.pSDK.DestroyByKey(this.getKeyName(entity))
+			this.removeModel(entity)
 		}
 	}
 	public UnitAbilityDataUpdated() {
@@ -70,63 +77,67 @@ export class LanternManager {
 		if (abilData === undefined) {
 			return
 		}
-		this.channelTime = abilData.GetChannelTime(1)
-		this.inactiveDuration = abilData.GetSpecialValue("inactive_duration", 1)
-		this.activeDuration = abilData.GetSpecialValue("active_duration", 1)
+		this.timings.Channel = abilData.GetChannelTime(1)
+		this.timings.Inactive = abilData.GetSpecialValue("inactive_duration", 1)
+		this.timings.Active = abilData.GetSpecialValue("active_duration", 1)
+	}
+	public MenuChanged() {
+		for (let i = this.models.length - 1; i > -1; i--) {
+			this.updateRadius(this.models[i])
+		}
 	}
 	public GameEnded() {
-		this.gui.clear()
+		for (let i = this.models.length - 1; i > -1; i--) {
+			this.models[i].Destroy()
+		}
+		this.models.clear()
+		WorldChips.Reset()
 		this.pSDK.DestroyAll()
 		this.lastAnimation.clear()
 	}
 	private getKeyName(entity: Lantern) {
 		return `${entity.Index}_${entity.Name}`
 	}
-	private updateRadius(
-		lantern: Lantern,
-		destroy = false,
-		lastAnimation?: [Hero | FakeUnit, number]
-	) {
-		const state = this.menu.State && this.menu.Radius.value
-		const isProvidesVision = lantern.IsUnitStateFlagSet(
-			modifierstate.MODIFIER_STATE_PROVIDES_VISION
-		)
-		const isEnemy = this.isEnemy(lastAnimation?.[0])
-		if (!state || destroy || !isProvidesVision || !isEnemy) {
-			this.pSDK.DestroyByKey(this.getKeyName(lantern))
+	private updateRadius(model: LanternModel) {
+		const lantern = model.Entity,
+			state = this.menu.State.value && this.menu.Radius.value
+		if (lantern === undefined || !state || !model.IsEnemyActive) {
+			this.pSDK.DestroyByKey(model.Key)
+			model.RadiusDrawn = false
 			return
 		}
-		this.pSDK.DrawCircle(this.getKeyName(lantern), lantern, lantern.VisionRange, {
+		this.pSDK.DrawCircle(model.Key, lantern, lantern.VisionRange, {
 			Fill: this.menu.Fill.value,
 			Color: this.menu.RadiusColor.SelectedColor,
 			Attachment: ParticleAttachment.PATTACH_ABSORIGIN_FOLLOW
 		})
+		model.RadiusDrawn = true
 	}
-	private updateGUIData(
-		entity: Lantern,
-		lastAnimation: Nullable<[Hero | FakeUnit, number]>,
-		destroy = false,
-		isActive = false
-	) {
-		const keyName = this.getKeyName(entity)
-		if (destroy) {
-			this.gui.removeCallback(x => x.KeyName === keyName)
-			return
-		}
-
-		const heroName = lastAnimation?.[0].Name
-		const isEnemy = this.isEnemy(lastAnimation?.[0])
-		const find = this.gui.find(x => x.KeyName === keyName)
-		const position = entity.Position.Clone().AddScalarZ(entity.HealthBarOffset)
+	/** The model of this watcher, made where none stands yet. */
+	private modelOf(entity: Lantern) {
+		const find = this.models.find(x => x.EntityIndex === entity.Index)
 		if (find !== undefined) {
-			find.UpdateData(heroName, isActive, isEnemy, position)
-			return
+			return find
 		}
-		const newClass = new GUI(keyName, this.activeDuration, this.inactiveDuration)
-		newClass.UpdateData(heroName, isActive, isEnemy, position)
-		this.gui.push(newClass)
+		if (this.timings.Active === 0) {
+			this.UnitAbilityDataUpdated()
+		}
+		const model = new LanternModel(
+			this.getKeyName(entity),
+			entity.Index,
+			this.timings
+		)
+		model.Position.CopyFrom(entity.Position).AddScalarZ(entity.HealthBarOffset)
+		this.models.push(model)
+		return model
 	}
-	private isEnemy(entity: Nullable<Hero | FakeUnit>) {
-		return entity instanceof FakeUnit ? true : (entity?.IsEnemy() ?? false)
+	private removeModel(entity: Lantern) {
+		this.models.removeCallback(x => {
+			if (x.EntityIndex !== entity.Index) {
+				return false
+			}
+			x.Destroy()
+			return true
+		})
 	}
 }
