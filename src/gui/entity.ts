@@ -32,22 +32,23 @@ const DIGIT = /\d/g
 /**
  * The round timer a channel under way wears over the watcher: the portrait of whoever is
  * channelling, the channel left as a ring on its rim and the seconds over the middle, in dp at
- * the slider's middle, on the shadow a buff icon stands on.
+ * the slider's middle, with no drop shadow under it.
  */
 const TIMER = 40
-const TIMER_SHADOW = 3
 
 /**
- * How long a chip takes to come in, and how long it takes to dissolve once its watcher is done.
- * Going is the longer of the two: a watcher that ran out is worth a beat, where a chip arriving
- * should simply be there.
+ * How long a chip takes to come in, and how long it takes to dissolve once its watcher is done:
+ * both brisk, and the plate and its reading fade and drift as one.
  */
-const ENTER_MS = MenuSDK.Duration.Fade
-const EXIT_MS = MenuSDK.Duration.Reveal
-/** How far up a chip drifts at the far end of its dissolve, in dp. */
+const ENTER_MS = 100
+const EXIT_MS = 100
+/**
+ * How far up a chip drifts at the far end of its dissolve, in dp. The chip only fades and drifts,
+ * never scales: its width comes from the host's measurement of the reading at that exact font
+ * size, and a size that changes every frame is never measured in time, so the plate would lose
+ * its reading mid-dissolve.
+ */
 const DISSOLVE_LIFT = 6
-/** How much of its size it keeps by then. */
-const DISSOLVE_SCALE = 0.92
 const CANVAS_PREFIX = "lantern-esp:"
 /** What the channel timer's key carries after the watcher's own, so the two dissolve apart. */
 const CAPTURE_SUFFIX = ":capture"
@@ -59,7 +60,7 @@ const enum ViewKind {
 
 /**
  * How much of a chip stands this frame, 0 to 1: it eases to 1 as the watcher is taken and back to
- * 0 once it is done, and the alpha, the lift and the size are all read off it. Turning around
+ * 0 once it is done, and the alpha and the lift are both read off it. Turning around
  * midway carries on from where the value stood, so a watcher taken again never blinks.
  */
 class Presence {
@@ -111,6 +112,13 @@ class ChipView {
 	public progress = 0
 	public state = LanternState.Active
 	public heroName = ""
+	/**
+	 * The reading the chip draws, and the same with every digit a zero, which is what its width is
+	 * measured by. They move on once the host has measured the new reading: until then the chip
+	 * keeps the last one it could size, rather than standing a frame without its reading.
+	 */
+	public text = ""
+	public metric = ""
 	/** Whether the watcher this was drawn from reported itself this frame. */
 	public seen = false
 
@@ -166,14 +174,12 @@ class WorldChipsRegistry {
 		texture: Nullable<string>
 		progress: number
 		color: Color
-		shadow: number
 		text: string
 		opacity: number
 	} = {
 		texture: undefined,
 		progress: 0,
 		color: LanternTint(LanternState.Active),
-		shadow: TIMER_SHADOW,
 		text: "",
 		opacity: 1
 	}
@@ -249,39 +255,50 @@ class WorldChipsRegistry {
 		}
 		const gone = 1 - presence,
 			k = (menu.Size.value + SIZE_STEP) / (SIZE_BASE + SIZE_STEP),
-			ks = k * (DISSOLVE_SCALE + (1 - DISSOLVE_SCALE) * presence),
 			lift = GUIInfo.ScaleHeight(DISSOLVE_LIFT * k) * gone
 		if (view.Kind === ViewKind.Timer) {
-			this.drawTimer(view, w2s, ks, lift, presence)
+			this.drawTimer(view, w2s, k, lift, presence)
 			return
 		}
-		this.drawChip(view, w2s, ks, lift, presence, menu)
+		this.drawChip(view, w2s, k, lift, presence, menu)
 	}
 	private drawChip(
 		view: ChipView,
 		w2s: Vector2,
-		ks: number,
+		k: number,
 		lift: number,
 		presence: number,
 		menu: MenuManager
 	) {
 		const canvas = view.canvas,
-			height = GUIInfo.ScaleHeight(HEIGHT * ks),
-			pad = GUIInfo.ScaleWidth(PAD * ks),
-			gap = GUIInfo.ScaleWidth(GAP * ks),
-			glyph = GUIInfo.ScaleHeight(GLYPH * ks),
+			height = GUIInfo.ScaleHeight(HEIGHT * k),
+			pad = GUIInfo.ScaleWidth(PAD * k),
+			gap = GUIInfo.ScaleWidth(GAP * k),
+			glyph = GUIInfo.ScaleHeight(GLYPH * k),
 			hasTime = view.time >= 0,
 			hasHero = view.heroName !== "",
-			portrait = hasHero ? GUIInfo.ScaleHeight(PORTRAIT * ks) : 0,
-			text = !hasTime
+			portrait = hasHero ? GUIInfo.ScaleHeight(PORTRAIT * k) : 0,
+			reading = !hasTime
 				? ""
 				: menu.FormatTime.value
 					? Math.formatTime(view.time)
 					: view.time.toFixed(view.time > 1 ? 0 : 1)
 
-		this.textStyle.size = GUIInfo.ScaleHeight(FONT * ks)
-		const metric = text.replace(DIGIT, "0"),
-			textW = hasTime ? MenuSDK.TextSize(metric, this.textStyle).x : 0,
+		this.textStyle.size = GUIInfo.ScaleHeight(FONT * k)
+		// a reading the host has not measured yet comes back 0 wide; drawn like that the plate
+		// would stand without its time for a frame and then widen once the measurement lands
+		const readingMetric = reading.replace(DIGIT, "0")
+		let textW = hasTime ? MenuSDK.TextSize(readingMetric, this.textStyle).x : 0
+		if (textW !== 0) {
+			view.text = reading
+			view.metric = readingMetric
+		} else if (hasTime && view.metric.length !== 0) {
+			textW = MenuSDK.TextSize(view.metric, this.textStyle).x
+		}
+		if (hasTime && textW === 0) {
+			return
+		}
+		const text = view.text,
 			width = Math.round(
 				pad +
 					glyph +
@@ -296,8 +313,8 @@ class WorldChipsRegistry {
 
 		this.ink.CopyFrom(tint).SetA(Math.round(255 * presence))
 		this.white.SetA(Math.round(255 * presence))
-		this.portraitStyle.radius = GUIInfo.ScaleHeight(PORTRAIT_RADIUS * ks)
-		this.plate(view.surface, x, y, width, height, ks, tint, presence)
+		this.portraitStyle.radius = GUIInfo.ScaleHeight(PORTRAIT_RADIUS * k)
+		this.plate(view.surface, x, y, width, height, k, tint, presence)
 
 		let cursor = x + pad
 		this.pos.SetVector(cursor, Math.round(centerY - glyph / 2))
@@ -336,11 +353,11 @@ class WorldChipsRegistry {
 		y: number,
 		w: number,
 		h: number,
-		ks: number,
+		k: number,
 		tint: Color,
 		presence: number
 	) {
-		MenuSDK.setHudWorldScale(ks)
+		MenuSDK.setHudWorldScale(k)
 		this.box.pos1.SetVector(x, y)
 		this.box.pos2.SetVector(x + w, y + h)
 		MenuSDK.SetActiveSurface(surface)
@@ -362,11 +379,11 @@ class WorldChipsRegistry {
 	private drawTimer(
 		view: ChipView,
 		w2s: Vector2,
-		ks: number,
+		k: number,
 		lift: number,
 		presence: number
 	) {
-		const size = Math.round(GUIInfo.ScaleHeight(TIMER * ks)),
+		const size = Math.round(GUIInfo.ScaleHeight(TIMER * k)),
 			style = this.timerStyle
 		style.texture =
 			view.heroName === "" ? undefined : ImageData.GetHeroTexture(view.heroName)
