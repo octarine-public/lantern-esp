@@ -112,23 +112,19 @@ class ChipView {
 	public progress = 0
 	public state = LanternState.Active
 	public heroName = ""
-	/**
-	 * The reading the chip draws, and the same with every digit a zero, which is what its width is
-	 * measured by. They move on once the host has measured the new reading: until then the chip
-	 * keeps the last one it could size, rather than standing a frame without its reading.
-	 */
-	public text = ""
-	public metric = ""
+	public readonly reading: MenuSDK.HeldText
 	/** Whether the watcher this was drawn from reported itself this frame. */
 	public seen = false
 
 	constructor(
 		public readonly Key: string,
-		public readonly Kind: ViewKind
+		public readonly Kind: ViewKind,
+		measure: (text: string) => number
 	) {
 		const id = CANVAS_PREFIX + Key
 		this.canvas = new MenuSDK.Canvas(id, MenuSDK.EPanelLayer.World)
 		this.surface = MenuSDK.HudSurfaceOf(id, MenuSDK.EPanelLayer.World)
+		this.reading = new MenuSDK.HeldText(measure)
 	}
 	public Drop() {
 		MenuSDK.DropHudSurface(CANVAS_PREFIX + this.Key)
@@ -170,6 +166,8 @@ class WorldChipsRegistry {
 		effect: MenuSDK.EHudTextEffect.Outline,
 		effectOpacity: OUTLINE
 	}
+	private readonly measureReading = (text: string) =>
+		MenuSDK.TextSize(text.replace(DIGIT, "0"), this.textStyle).x
 	private readonly timerStyle: {
 		texture: Nullable<string>
 		progress: number
@@ -244,7 +242,7 @@ class WorldChipsRegistry {
 				return known
 			}
 		}
-		const view = new ChipView(key, kind)
+		const view = new ChipView(key, kind, this.measureReading)
 		this.views.push(view)
 		return view
 	}
@@ -278,27 +276,17 @@ class WorldChipsRegistry {
 			hasTime = view.time >= 0,
 			hasHero = view.heroName !== "",
 			portrait = hasHero ? GUIInfo.ScaleHeight(PORTRAIT * k) : 0,
-			reading = !hasTime
+			text = !hasTime
 				? ""
 				: menu.FormatTime.value
 					? Math.formatTime(view.time)
 					: view.time.toFixed(view.time > 1 ? 0 : 1)
 
 		this.textStyle.size = GUIInfo.ScaleHeight(FONT * k)
-		// a reading the host has not measured yet comes back 0 wide; drawn like that the plate
-		// would stand without its time for a frame and then widen once the measurement lands
-		const readingMetric = reading.replace(DIGIT, "0")
-		let textW = hasTime ? MenuSDK.TextSize(readingMetric, this.textStyle).x : 0
-		if (textW !== 0) {
-			view.text = reading
-			view.metric = readingMetric
-		} else if (hasTime && view.metric.length !== 0) {
-			textW = MenuSDK.TextSize(view.metric, this.textStyle).x
-		}
-		if (hasTime && textW === 0) {
+		if (hasTime && !view.reading.Take(text)) {
 			return
 		}
-		const text = view.text,
+		const textW = hasTime ? view.reading.Width : 0,
 			width = Math.round(
 				pad +
 					glyph +
@@ -326,7 +314,7 @@ class WorldChipsRegistry {
 			cursor += gap
 			this.box.pos1.SetVector(cursor, y)
 			this.box.pos2.SetVector(cursor + textW, y + height)
-			canvas.TextIn(text, this.box, this.textStyle)
+			canvas.TextIn(view.reading.Text, this.box, this.textStyle)
 			cursor += textW
 		}
 		if (!hasHero) {
