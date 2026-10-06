@@ -82,9 +82,11 @@ export class LanternManager {
 		this.timings.Active = abilData.GetSpecialValue("active_duration", 1)
 	}
 	public MenuChanged() {
-		for (let i = this.models.length - 1; i > -1; i--) {
-			this.updateRadius(this.models[i])
-		}
+		this.updateRadii()
+	}
+	/** The vision a watcher gives turned with the time of day: every circle takes the new radius. */
+	public DayNightChanged() {
+		this.updateRadii()
 	}
 	public GameEnded() {
 		for (let i = this.models.length - 1; i > -1; i--) {
@@ -97,6 +99,11 @@ export class LanternManager {
 	}
 	private getKeyName(entity: Lantern) {
 		return `${entity.Index}_${entity.Name}`
+	}
+	private updateRadii() {
+		for (let i = this.models.length - 1; i > -1; i--) {
+			this.updateRadius(this.models[i])
+		}
 	}
 	private updateRadius(model: LanternModel) {
 		const lantern = model.Entity,

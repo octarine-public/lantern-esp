@@ -44,7 +44,7 @@ export class MenuManager {
 			"Additional timer size and hero image"
 		)
 		this.Size.IconPath = LanternIcons.Size
-		this.RadiusColor = this.Tree.AddColorPicker("Radius color", Color.Red)
+		this.RadiusColor = this.Tree.AddColorPicker("Radius color", Color.Orange)
 		this.RadiusColor.IconPath = LanternIcons.Color
 
 		this.Fill.IsHidden = !this.Radius.value

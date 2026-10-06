@@ -16,6 +16,7 @@ new (class CLanternESP {
 		EventsSDK.on("ModifierRemoved", this.ModifierRemoved.bind(this))
 		EventsSDK.on("EntityDestroyed", this.EntityDestroyed.bind(this))
 		EventsSDK.on("UnitAbilityDataUpdated", this.UnitAbilityDataUpdated.bind(this))
+		EventsSDK.on("DayNightChanged", this.DayNightChanged.bind(this))
 		EventsSDK.on("GameEnded", this.GameEnded.bind(this))
 		this.menu.MenuChanged(() => this.manager.MenuChanged())
 	}
@@ -72,6 +73,9 @@ new (class CLanternESP {
 		if (entity instanceof Hero && entity.IsIllusion) {
 			this.manager.EntityDestroyed(entity)
 		}
+	}
+	protected DayNightChanged() {
+		this.manager.DayNightChanged()
 	}
 	protected GameEnded() {
 		this.manager.GameEnded()
