@@ -4,7 +4,7 @@
  * window with a card and a switch for each part. Register a control on the part that answers for
  * it, with what gives it away as the detail.
  * @example
- * DotaSafeMode.ConVars.RegisterValue(disableSmoke, false, "fog_enable")
+ * DotaSafeMode.ConVars.RegisterOption(weather, 0, "cl_weather")
  */
 declare class CDotaSafeMode {
 	/**

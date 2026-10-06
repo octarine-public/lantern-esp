@@ -32,7 +32,10 @@ declare class CGUIInfo {
 	public get Scoreboard(): CScoreboard
 	/** The lower HUD of the unit the game currently has selected. */
 	public get LowerHUD(): CLowerHUD
-	/** True while the player keeps the minimap on the right-hand side. */
+	/**
+	 * True while the player keeps the minimap on the right-hand side: the game marks its HUD with
+	 * the `HUDFlipped` class and mirrors the minimap and the lower HUD to the other side.
+	 */
 	public get HUDFlipped(): boolean
 	/**
 	 * The root of any Panorama window, for panels outside the HUD.

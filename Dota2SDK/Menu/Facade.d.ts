@@ -14,11 +14,29 @@ declare namespace MenuSDK {
 		public get InternalName(): string
 		/** The tooltip as the script wrote it, before the translation of the day. */
 		public get InternalTooltipName(): string
+		/**
+		 * Extra words the menu search finds this entry by, besides its name. Each keyword is also
+		 * matched in every translation it has, so synonyms users type can be added per language.
+		 * @example
+		 * distance.SearchKeywords = ["Camera zoom", "Zoom out"]
+		 */
+		public get SearchKeywords(): readonly string[]
+		public set SearchKeywords(value: readonly string[])
 		public get IconPath(): string
 		public set IconPath(value: string)
 		public foreachParent(callback: (node: Node) => void, includeSelf?: boolean): void
 		public everyParent(predicate: (node: Node) => boolean): boolean
 		public get parent(): Nullable<Node>
+		/**
+		 * Ties controls this row draws on its own to it: resetting the row resets them too, and the
+		 * row wears the changed mark while any of them is changed. For a row of a custom page that
+		 * shows values kept in hidden controls.
+		 * @example
+		 * state.Companions(sound, volume)
+		 */
+		public Companions(...handles: {
+			readonly entry: Entry
+		}[]): this
 		public get IsHidden(): boolean
 		public set IsHidden(value: boolean)
 		public get Name(): string
@@ -334,6 +352,26 @@ declare namespace MenuSDK {
 		public SetOptionIcons(icons: readonly string[]): Dropdown
 		/** The images riding the options, or nothing where the list is names alone. */
 		public get optionIcons(): string[]
+		/**
+		 * Rides a small icon on the corner of each option's card in the `"cards"` {@link Layout}, given
+		 * in the order the options were, to mark what an option can do that its picture does not show.
+		 * An option whose entry is empty carries no mark.
+		 * @example
+		 * models.SetOptionMarks(models.values.map(name => (tintable.has(name) ? "menu/ui/palette.svg" : "")))
+		 */
+		public SetOptionMarks(marks: readonly string[]): Dropdown
+		/** The icons marking the options' cards, or nothing where no option carries one. */
+		public get optionMarks(): string[]
+		/**
+		 * How the options are offered: `"list"` opens them in a popover from the row, `"cards"` lays
+		 * them out under the row as picture cards drawn from {@link SetOptionIcons}, each picked with
+		 * one click. Cards suit a short list of things told apart by their looks.
+		 * @example
+		 * models.SetOptionIcons(models.values.map(name => `images/models/${name}.png`))
+		 * models.Layout = "cards"
+		 */
+		public get Layout(): DropdownLayout
+		public set Layout(value: DropdownLayout)
 		public OnValue(callback: (caller: Dropdown) => void): Dropdown
 		/** Runs the value listeners without a value having changed. */
 		public TriggerOnValueChangedCBs(): Dropdown
@@ -455,6 +493,26 @@ declare namespace MenuSDK {
 		public set defaultKey(value: string)
 		public get defaultKeyIdx(): number
 		public set defaultKeyIdx(value: number)
+		/**
+		 * The mode the bind is declared with: set, its row offers a Hold/Toggle switch left of the
+		 * key, the player's pick is saved with the bind, and a reset returns to this one. Undefined -
+		 * no mode and no switch. The bind reports presses and releases in either mode; {@link Mode}
+		 * says how the script should read them.
+		 * @example
+		 * this.FarmKey = tree.AddKeybind("Farm key", "")
+		 * this.FarmKey.defaultMode = "hold"
+		 * this.FarmKey.OnPressed(() => (this.FarmKey.Mode === "toggle" ? this.Flip() : this.Start()))
+		 * this.FarmKey.OnRelease(() => this.FarmKey.Mode === "hold" && this.Stop())
+		 */
+		public get defaultMode(): Nullable<HotkeyMode>
+		public set defaultMode(value: Nullable<HotkeyMode>)
+		/**
+		 * The mode the player picked on the bind's switch, or nothing while it has no
+		 * {@link defaultMode}. Setting it is a change of the player's: saved, and heard by the value
+		 * listeners.
+		 */
+		public get Mode(): Nullable<HotkeyMode>
+		public set Mode(value: HotkeyMode)
 		/**
 		 * Full display name of the current bind: "Ctrl + F" for combinations,
 		 * "F" for single keys, "None" when unbound.
@@ -871,6 +929,17 @@ declare namespace MenuSDK {
 		 */
 		public get BackAction(): Nullable<() => boolean>
 		public set BackAction(value: Nullable<() => boolean>)
+		/**
+		 * Drops the top bar - the history arrows and the breadcrumb - over this node's pages and its
+		 * children's, giving its height to the page. For a tool whose pages carry their own navigation
+		 * and need every row of the window. The window still drags by its side column's header and by
+		 * any bare stretch of the page, and Alt+← still runs the page's {@link BackAction}.
+		 * @example
+		 * const changer = MenuSDK.Menu.AddEntry("Skin Changer", icon)
+		 * changer.HideTopBar = true
+		 */
+		public get HideTopBar(): boolean
+		public set HideTopBar(value: boolean)
 		/**
 		 * A popover of settings hanging off `host`: a row grows a button at its end, and the chip a
 		 * page wears as its {@link HeaderControl} grows one beside it in the top bar, opening

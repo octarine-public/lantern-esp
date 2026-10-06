@@ -23,7 +23,8 @@ declare namespace MenuSDK {
 	function SortEntries(parent: NodeEntry): void
 	/**
 	 * Registers the host's tables of icons and sort priorities for menu pages, keyed by the page's
-	 * path through the tree: `"Visual"` for a tab, `"Visual/Players"` for a page inside it. A page
+	 * path through the tree: `"Visual"` for a tab, `"Visual/Players"` for a page inside it. The icon
+	 * table also names controls the game adds without one, such as `"Main/Dota Plus"`. A page
 	 * carries the priority whenever it is created, so a list several scripts fill in separately
 	 * still holds the order the game asks for instead of falling back to the alphabet.
 	 *
@@ -187,6 +188,8 @@ declare namespace MenuSDK {
 	/** Saves whether this bind blocks game input, without changing an ongoing press. */
 	function SetKeybindClaimsKey(entry: KeybindEntry, value: boolean): void
 	function SetKeybindValue(entry: KeybindEntry, key: number): void
+	/** Puts a bind in `mode`: its value listeners hear it, as they hear a new key. */
+	function SetKeybindMode(entry: KeybindEntry, mode: HotkeyMode): void
 	/**
 	 * What a picker is showing right now: the colour it holds, or the live one it
 	 * {@link ColorEntry.follows} while nobody has touched it.
@@ -271,7 +274,8 @@ declare namespace MenuSDK {
 		readonly iconPath: string
 	}
 	/**
-	 * Entries whose name — or a translated alias `localize` returns for it — contains the query,
+	 * Entries whose name or search keywords — or a translated alias `localize` returns for either —
+	 * contain the query,
 	 * best match first. The query is also tried as if typed in the other keyboard layout and
 	 * transliterated to Latin, so `ghbwtk` finds «Прицел» and `аимбот` finds "Aimbot"; hits as typed
 	 * come first, then wrong-layout hits, then transliterated ones. Within a tier exact names beat

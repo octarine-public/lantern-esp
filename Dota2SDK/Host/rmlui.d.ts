@@ -292,9 +292,27 @@ declare function RegisterImageBlob(data: ArrayBuffer | ArrayBufferView): string
 /**
  * Drops the bytes behind a source minted by {@link RegisterImageBlob}. A texture already built
  * from them stays valid — the bytes are only read while it loads — so the moment to free one is
- * when its replacement is registered.
+ * when its replacement is ready (see {@link ImageBlobReady}).
  */
 declare function FreeImageBlob(source: string): void
+/**
+ * Whether the picture behind a blob source is decoded: `true` once it is, and an element given the
+ * source draws it from the first frame; `false` while it is still decoding; `undefined` when it
+ * never will be — the source is not a registered blob, or its bytes could not be decoded.
+ *
+ * A blob minted by {@link RegisterSizedImageBlob} is decoded off the render thread after it is
+ * registered, and an element given it draws nothing until then. To swap one picture for another
+ * without a blank frame, keep the old source on the element until the new one answers `true`,
+ * then free the old one. A blob minted without a size decodes the first time it is drawn and
+ * answers `true` at once. Feature-detect: hosts predating it have no such function, and decode
+ * every blob the first time it is drawn.
+ * @example
+ * if (ImageBlobReady(next) === true) {
+ * 	element.setAttribute("src", next)
+ * 	FreeImageBlob(current)
+ * }
+ */
+declare function ImageBlobReady(source: string): boolean | undefined
 
 /**
  * Mints an image source naming a file and the pixel size it will be drawn at, so the decode
@@ -353,7 +371,8 @@ declare function RegisterSizedImageRegion(
 ): string
 /**
  * Mints an image source for bytes a script holds plus the pixel size they will be drawn at, so the
- * decode resamples straight to that size the way {@link RegisterSizedImage} does for a file. Freed
+ * decode resamples straight to that size the way {@link RegisterSizedImage} does for a file. The
+ * decode runs off the render thread, and {@link ImageBlobReady} says when it has landed. Freed
  * with {@link FreeImageBlob} like any other blob. Feature-detect: hosts predating it have no such
  * function.
  *

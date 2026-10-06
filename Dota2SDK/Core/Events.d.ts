@@ -138,6 +138,15 @@ interface EventsMap {
 	UnitRemoveAllGestures: [npc: Nullable<Unit | FakeUnit>]
 	UnitFadeGesture: [npc: Nullable<Unit | FakeUnit>, activity: number]
 	GameStateChanged: [newState: DOTAGameState]
+	/**
+	 * Emitted once per flip of `GameRules.IsNight`: the regular cycle, Nightstalker's night and
+	 * temporary day or night alike. Not emitted for the value a match starts with.
+	 * @example
+	 * EventsSDK.on("DayNightChanged", isNight => {
+	 * 	console.log(isNight ? "night" : "day")
+	 * })
+	 */
+	DayNightChanged: [isNight: boolean]
 	LifeStateChanged: [ent: Entity]
 	UnitAbilitiesChanged: [ent: Unit]
 	UnitWearablesChanged: [ent: Unit]

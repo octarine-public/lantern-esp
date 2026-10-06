@@ -585,4 +585,82 @@ declare namespace FogOfWar {
 
 	/** How visible the tile under the point is, from 0 in fog to 1 in full vision; the game treats above 0.2 as seen. */
 	function GetVisibilityDegree(position: Vector3): number
+
+	interface Overlay {
+		/** Hides the overlay on the world and the minimap */
+		hidden?: boolean
+		/** Multiplies how bright the overlaid area stays, 1 keeps the map's and 0 is fully dark */
+		brightness?: number
+		/** 0xAABBGGRR, takes the hue and keeps how strong the map's colour is */
+		color?: number
+	}
+
+	/**
+	 * The dark overlay over what the team cannot see. Only the look changes, units in fog stay
+	 * hidden. Anything left out keeps the map's value, called with nothing it goes back to the map's.
+	 * @example
+	 * FogOfWar.SetOverlay({ hidden: true })
+	 * FogOfWar.SetOverlay({ brightness: 1.5, color: Color.Aqua.toUint32() })
+	 */
+	function SetOverlay(overlay?: Overlay): void
+}
+
+/** The world's distance fog */
+declare namespace Fog {
+	interface Override {
+		/** False turns the fog off */
+		enabled?: boolean
+		/** 0xAABBGGRR */
+		color?: number
+		start?: number
+		end?: number
+		/** 0 to 1 */
+		maxDensity?: number
+		/** How fast the fog thickens between start and end */
+		exponent?: number
+		/** Multiplies the map's fog brightness */
+		brightness?: number
+		/** Multiplies start and end, above 1 pushes the fog further away */
+		distance?: number
+		/** Multiplies the max density, capped at 1 */
+		density?: number
+		/** 0xAABBGGRR, makes the fog two-tone: color looking along direction, this one looking away */
+		secondColor?: number
+		/** Yaw in degrees the first color faces in two-tone fog, 0 by default */
+		direction?: number
+	}
+
+	/**
+	 * Overrides the map's fog, anything left out keeps the map's value. Called with nothing it goes
+	 * back to the map's fog. Distances only apply when end is past start.
+	 * @example
+	 * Fog.SetOverride({ enabled: false })
+	 * Fog.SetOverride({ color: 0xFF402010, start: 1500, end: 4000 })
+	 * Fog.SetOverride({ color: Color.Orange.toUint32(), secondColor: Color.Aqua.toUint32(), direction: 45 })
+	 */
+	function SetOverride(fog?: Override): void
+}
+
+/** The world's sun, ambient and specular light */
+declare namespace Lighting {
+	interface Override {
+		/** 0xAABBGGRR */
+		sunColor?: number
+		/** Multiplies the map's sun brightness */
+		sunBrightness?: number
+		/** 0xAABBGGRR, the sky and the ground bounce light */
+		ambientColor?: number
+		/** Multiplies the map's ambient brightness */
+		ambientBrightness?: number
+		/** Multiplies the map's specular highlights */
+		specularBrightness?: number
+	}
+
+	/**
+	 * Overrides the map's light, anything left out keeps the map's value. Called with nothing it
+	 * goes back to the map's light.
+	 * @example
+	 * Lighting.SetOverride({ sunColor: Color.Orange.toUint32(), sunBrightness: 1.5 })
+	 */
+	function SetOverride(lighting?: Override): void
 }

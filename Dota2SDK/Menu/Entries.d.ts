@@ -40,6 +40,8 @@ declare namespace MenuSDK {
 		/** Runtime visibility in the hotkeys panel; false also excludes descendant binds. Defaults to true. */
 		hotkeysVisible?: boolean
 		searchHidden: boolean
+		/** Extra words the menu search matches besides the name, each also tried in its translations. */
+		searchKeywords?: readonly string[]
 		disabled: boolean
 		firstTime: boolean
 		saveConfig: boolean
@@ -55,6 +57,11 @@ declare namespace MenuSDK {
 		 * (the keybinds list) can jump to the setting they mirror.
 		 */
 		revealTarget?: Entry
+		/**
+		 * Values a row draws but keeps in entries of their own: resetting the row resets them too,
+		 * and the row wears the changed mark while any of them is changed.
+		 */
+		companions?: Entry[]
 	}
 	function IsEntryVisible(entry: EntryCommon): boolean
 	/**
@@ -153,6 +160,8 @@ declare namespace MenuSDK {
 		disabledNotice?: DisabledNotice
 		customPage?: () => React.ReactNode
 		backAction?: () => boolean
+		/** Whether the node's pages, and its children's, drop the top bar and give its height to the page. */
+		hideTopBar?: boolean
 	}
 	/** A button a note carries at its end, which a click anywhere on the note presses too. */
 	interface DescriptionAction {
@@ -322,6 +331,13 @@ declare namespace MenuSDK {
 		 * reading down the names.
 		 */
 		icons?: string[]
+		/** How the options are offered; a list when unset. */
+		layout?: DropdownLayout
+		/**
+		 * A small icon riding the corner of each option's card, parallel to {@link values} and empty
+		 * where an option has none - what an option can do that its picture does not show.
+		 */
+		marks?: string[]
 		swatches?: OptionSwatches
 		/** Keys bound to this dropdown from its context menu, in creation order. */
 		hotkeys: DropdownHotkey[]
@@ -329,6 +345,11 @@ declare namespace MenuSDK {
 		logic: DropdownLogic[]
 		listeners: ((entry: DropdownEntry) => void)[]
 	}
+	/**
+	 * How a dropdown offers its options: `"list"` opens them in a popover from the row, `"cards"`
+	 * lays them out under the row as picture cards, each picked with one click.
+	 */
+	type DropdownLayout = "list" | "cards"
 	/**
 	 * Colour pickers riding an option's own row, keyed by the option's value for the same reason
 	 * the selection is: a renamed or reordered list must not move them onto a different item.
@@ -376,6 +397,13 @@ declare namespace MenuSDK {
 		claimed: boolean
 		allowLeftMouse: boolean
 		allowCombinations: boolean
+		/**
+		 * The mode the bind is declared with, which a reset returns to. Set, its row offers a
+		 * Hold/Toggle switch beside the key; undefined, the bind has no mode.
+		 */
+		defaultMode?: HotkeyMode
+		/** The mode the player picked; read while {@link defaultMode} is set. */
+		mode?: HotkeyMode
 		listeners: ((entry: KeybindEntry) => void)[]
 	}
 	/** Visual emphasis of an action button. */

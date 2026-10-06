@@ -25,6 +25,12 @@ declare namespace MenuSDK {
 	const DefaultHeight = 704
 	/** The corner the window is carved with, which its clip, its glow and its edges follow. */
 	const FrameRadius = 10
+	/**
+	 * The outline the window is drawn with, in dp. Everything the window holds is laid out and
+	 * clipped inside it, so its columns share `w - 2 * FrameBorder` and nothing scrolled to the edge
+	 * reaches the frame's outline or its antialiased rim.
+	 */
+	const FrameBorder = 1
 	const RailMin = 48
 	const RailDefault = 176
 	const RailMax = 280

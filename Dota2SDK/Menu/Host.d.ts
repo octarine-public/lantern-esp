@@ -51,6 +51,13 @@ declare namespace MenuSDK {
 		 */
 		readonly canDrawOverlays?: () => boolean
 		/**
+		 * Whether one of the game's own panels - the shop, the scoreboard - stands over the screen
+		 * point `x`, `y`. A screen panel asks it of its top-left corner and stands down while it says
+		 * yes, so it never draws on top of a window the player opened. A host that does not answer
+		 * covers nothing.
+		 */
+		readonly occluded?: (x: number, y: number) => boolean
+		/**
 		 * True while the game has taken the keyboard — a chat box or a console. Keybinds stay quiet
 		 * then, so typing a message does not fire them, unless {@link MenuFlags.TriggerWhileTyping}
 		 * says otherwise.
@@ -108,6 +115,8 @@ declare namespace MenuSDK {
 	function MenuScale(): number
 	/** Whether an overlay may draw right now; see {@link MenuHost.canDrawOverlays}. */
 	function HostCanDrawOverlays(): boolean
+	/** @see MenuHost.occluded */
+	function HostOccluded(x: number, y: number): boolean
 	function HostCursorPosition(): [number, number]
 	/**
 	 * Text size in px, cached after the first successful host measurement, so the answer is

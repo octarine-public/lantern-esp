@@ -89,6 +89,14 @@ declare namespace MenuSDK {
 	 */
 	function SdfSweep(radius: number, fill: string, percent: number, from?: number, inset?: number): RmlStyle
 	/**
+	 * The shape as a checkerboard: `light` with the `cell`-dp square at the shape's top-left corner
+	 * and every other one from it in `dark` - what shows through a translucent color laid over the
+	 * same shape. The squares are cut by the shader, so they run right up to the edge, rounded or
+	 * not, and share its coverage. The radius is absolute and `inset` grows the quad, as in
+	 * {@link SdfShape}.
+	 */
+	function SdfChecker(radius: number, light: string, dark: string, cell: number, inset?: number): RmlStyle
+	/**
 	 * Style fragment for a circle rendered by the same pipeline: the radius always collapses to the
 	 * element's half-extent, so the shape stays round at any size and skips the theme's radius scale
 	 * — a ring around an avatar has to match the avatar, not the menu's corner style. `inset` grows
