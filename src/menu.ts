@@ -1,4 +1,5 @@
 import { LanternIcons } from "./icons"
+import { AddMapObjectsPage } from "./map-objects"
 
 export class MenuManager {
 	public readonly Tree: Menu.Node
@@ -9,10 +10,8 @@ export class MenuManager {
 	public readonly RadiusColor: Menu.ColorPicker
 	public readonly FormatTime: Menu.Toggle
 
-	private readonly visual = Menu.AddEntry("Visual")
-
 	constructor() {
-		this.Tree = this.visual.AddNode(
+		this.Tree = AddMapObjectsPage(
 			"Watchers",
 			LanternIcons.Watcher,
 			"Who captured a watcher and for how long,\nwith the enemy's vision circle around it"
