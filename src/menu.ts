@@ -1,9 +1,5 @@
-import {
-	Color,
-	ImageData,
-	Menu,
-	PathData
-} from "github.com/octarine-public/wrapper/index"
+import { LanternIcons } from "./icons"
+import { AddMapObjectsPage } from "./map-objects"
 
 export class MenuManager {
 	public readonly Tree: Menu.Node
@@ -14,26 +10,30 @@ export class MenuManager {
 	public readonly RadiusColor: Menu.ColorPicker
 	public readonly FormatTime: Menu.Toggle
 
-	private readonly visual = Menu.AddEntry("Visual")
-
 	constructor() {
-		this.Tree = this.visual.AddNode(
+		this.Tree = AddMapObjectsPage(
 			"Watchers",
-			PathData.AbilityImagePath + "/watcher_channel_png.vtex_c"
+			LanternIcons.Watcher,
+			"Who captured a watcher and for how long,\nwith the enemy's vision circle around it"
 		)
 		this.Tree.SortNodes = false
 
+		// the script's own switch rides the header of the page and gates it
 		this.State = this.Tree.AddToggle("State", true)
-		this.Radius = this.Tree.AddToggle("Vision radius", true, "Enemy vision radius")
-		this.Fill = this.Tree.AddToggle("Fill", true, "Fill radius insides color")
+		this.State.IconPath = LanternIcons.State
+		this.Tree.HeaderControl = this.State
+		this.Tree.Gate = this.State
 
+		this.Radius = this.Tree.AddToggle("Vision radius", true, "Enemy vision radius")
+		this.Radius.IconPath = LanternIcons.Radius
+		this.Fill = this.Tree.AddToggle("Fill", true, "Fill radius insides color")
+		this.Fill.IconPath = LanternIcons.Fill
 		this.FormatTime = this.Tree.AddToggle(
 			"Format time",
 			true,
-			"Show cooldown\nformat time (min:sec)",
-			-1,
-			ImageData.Icons.icon_svg_format_time
+			"Show cooldown\nformat time (min:sec)"
 		)
+		this.FormatTime.IconPath = LanternIcons.FormatTime
 		this.Size = this.Tree.AddSlider(
 			"Additional size",
 			4,
@@ -42,7 +42,12 @@ export class MenuManager {
 			1,
 			"Additional timer size and hero image"
 		)
-		this.RadiusColor = this.Tree.AddColorPicker("Radius color", Color.Red)
+		this.Size.IconPath = LanternIcons.Size
+		this.RadiusColor = this.Tree.AddColorPicker("Radius color", Color.Orange)
+		this.RadiusColor.IconPath = LanternIcons.Color
+
+		this.Fill.IsHidden = !this.Radius.value
+		this.RadiusColor.IsHidden = !this.Radius.value
 		this.Radius.OnValue(call => {
 			this.Fill.IsHidden = !call.value
 			this.RadiusColor.IsHidden = !call.value
@@ -53,6 +58,7 @@ export class MenuManager {
 		this.Size.OnValue(() => callback())
 		this.State.OnValue(() => callback())
 		this.Radius.OnValue(() => callback())
+		this.Fill.OnValue(() => callback())
 		this.FormatTime.OnValue(() => callback())
 		this.RadiusColor.OnValue(() => callback())
 	}

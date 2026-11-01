@@ -1,4 +1,6 @@
 {
+	"Map objects": "Объекты карты",
+	"Timers of the objects on the map": "Таймеры объектов на карте",
 	"State": "Состояние",
 	"Additional size": "Доп. размер",
 	"Watchers": "Смотрители",
@@ -11,5 +13,6 @@
 	"Enemy vision radius": "Вражеский радиус обзора",
 	"Radius color": "Цвет радиуса",
 	"Fill": "Заливка",
-	"Fill radius insides color": "Цвет заливки внутри радиуса"
+	"Fill radius insides color": "Цвет заливки внутри радиуса",
+	"Who captured a watcher and for how long,\nwith the enemy's vision circle around it": "Кто захватил смотрителя и на сколько,\nс вражеским радиусом обзора вокруг"
 }

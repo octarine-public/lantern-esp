@@ -1,39 +1,24 @@
 import "./translations"
 
-import {
-	DOTAGameState,
-	DOTAGameUIState,
-	Entity,
-	EventsSDK,
-	FakeUnit,
-	GameActivity,
-	GameRules,
-	GameState,
-	Hero,
-	Lantern,
-	NetworkedParticle,
-	RendererSDK,
-	Unit
-} from "github.com/octarine-public/wrapper/index"
-
 import { LanternManager } from "./manager"
 import { MenuManager } from "./menu"
 
 new (class CLanternESP {
 	private readonly menu = new MenuManager()
 	private readonly manager = new LanternManager(this.menu)
-	private readonly parName =
-		"particles/econ/items/items_fx/lantern_of_sight_channeling.vpcf"
+	private readonly stateName = "modifier_watcher_state"
 
 	constructor() {
-		EventsSDK.on("Draw2D", this.Draw.bind(this))
-		this.menu.MenuChanged(() => RendererSDK.InvalidateDraw2D())
+		EventsSDK.on("Draw", this.Draw.bind(this))
 		EventsSDK.on("UnitAnimation", this.UnitAnimation.bind(this))
-		EventsSDK.on("UnitStateChanged", this.UnitStateChanged.bind(this))
+		EventsSDK.on("ModifierCreated", this.ModifierChanged.bind(this))
+		EventsSDK.on("ModifierChanged", this.ModifierChanged.bind(this))
+		EventsSDK.on("ModifierRemoved", this.ModifierRemoved.bind(this))
 		EventsSDK.on("EntityDestroyed", this.EntityDestroyed.bind(this))
 		EventsSDK.on("UnitAbilityDataUpdated", this.UnitAbilityDataUpdated.bind(this))
-		EventsSDK.on("ParticleCreated", this.ParticleCreated.bind(this))
+		EventsSDK.on("DayNightChanged", this.DayNightChanged.bind(this))
 		EventsSDK.on("GameEnded", this.GameEnded.bind(this))
+		this.menu.MenuChanged(() => this.manager.MenuChanged())
 	}
 
 	private get isInGameUI() {
@@ -41,8 +26,8 @@ new (class CLanternESP {
 	}
 	private get isPostGame() {
 		return (
-			GameRules === undefined ||
-			GameRules.GameState === DOTAGameState.DOTA_GAMERULES_STATE_POST_GAME
+			Dota2SDK.GameRules === undefined ||
+			Dota2SDK.GameRules.GameState === DOTAGameState.DOTA_GAMERULES_STATE_POST_GAME
 		)
 	}
 	protected Draw() {
@@ -53,21 +38,20 @@ new (class CLanternESP {
 	protected UnitAbilityDataUpdated() {
 		this.manager.UnitAbilityDataUpdated()
 	}
-	protected UnitStateChanged(entity: Unit) {
-		if (entity instanceof Lantern) {
-			this.manager.UnitStateChanged(entity)
+	protected ModifierChanged(modifier: Modifier) {
+		const parent = modifier.Parent
+		if (modifier.Name === this.stateName && parent instanceof Lantern) {
+			this.manager.WatcherChanged(parent, modifier)
 		}
 	}
-	protected ParticleCreated(particle: NetworkedParticle) {
-		if (particle.PathNoEcon !== this.parName) {
-			return
-		}
-		if (particle.ModifiersAttachedTo instanceof Lantern) {
-			this.manager.ParticleCreated(particle.ModifiersAttachedTo)
+	protected ModifierRemoved(modifier: Modifier) {
+		const parent = modifier.Parent
+		if (modifier.Name === this.stateName && parent instanceof Lantern) {
+			this.manager.WatcherRemoved(parent)
 		}
 	}
 	protected UnitAnimation(
-		npc: Unit | FakeUnit,
+		npc: Nullable<Unit | FakeUnit>,
 		_seq: number,
 		_rate: number,
 		_castPoint: number,
@@ -89,6 +73,9 @@ new (class CLanternESP {
 		if (entity instanceof Hero && entity.IsIllusion) {
 			this.manager.EntityDestroyed(entity)
 		}
+	}
+	protected DayNightChanged() {
+		this.manager.DayNightChanged()
 	}
 	protected GameEnded() {
 		this.manager.GameEnded()
